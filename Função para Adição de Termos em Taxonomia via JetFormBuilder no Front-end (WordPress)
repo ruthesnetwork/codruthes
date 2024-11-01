@@ -1,0 +1,43 @@
+// =============================
+// Código desenvolvido por Jefter Ruthes
+// Contato: ruthes.network / @RuthesJefter
+// =============================
+
+/*
+ * Código para adicionar taxonomia via front-end utilizando JetEngine, JetFormBuilder e WordPress.
+ *
+ * Este código permite a criação de termos em uma taxonomia específica a partir de um formulário
+ * JetFormBuilder no front-end do WordPress. Ele recebe os dados do formulário, sanitiza os termos e a taxonomia,
+ * verifica se a taxonomia existe e, em seguida, adiciona cada termo novo caso ele ainda não esteja registrado.
+ * 
+ * @param array $request Dados recebidos do formulário JetFormBuilder.
+ * @param object $action_handler Objeto de controle de ações personalizado do JetFormBuilder.
+ */
+
+add_action('jet-form-builder/custom-action/add_tax', function($request, $action_handler) {
+    // Verifica se os parâmetros necessários foram fornecidos
+    if (empty($request['name_taxonomie']) || empty($request['jobtaxonomieruthes'])) {
+        return;
+    }
+
+    // Sanitiza e separa os termos da taxonomia
+    $terms = array_map('sanitize_text_field', explode(',', $request['name_taxonomie']));
+    $taxonomy = sanitize_text_field($request['jobtaxonomieruthes']);
+
+    // Verifica se a taxonomia existe
+    if (!taxonomy_exists($taxonomy)) {
+        return;
+    }
+
+    // Adiciona cada termo à taxonomia se ele ainda não existir
+    foreach ($terms as $term) {
+        if (!term_exists($term, $taxonomy)) {
+            $result = wp_insert_term($term, $taxonomy);
+
+            // Log de erro, se houver falha ao inserir o termo
+            if (is_wp_error($result)) {
+                error_log("Erro ao inserir o termo '{$term}' na taxonomia '{$taxonomy}': " . $result->get_error_message());
+            }
+        }
+    }
+}, 10, 2);
