@@ -1,0 +1,82 @@
+<script type="text/javascript">
+
+// Código criado por Jefter Ruthes. Instagram: @RuthesJefter
+
+// Variáveis de ID dos campos do formulário, vinculando cada ID CSS ao campo correspondente.
+var rua = '#pref_endereco_da_prefeitura';
+var bairro = '#pref_bairro_da_prefeitura';
+var cidade = '#pref_cidade_da_prefeitura';
+var uf = '#pref_estado_da_prefeitura';
+var cep = '#pref_cep_da_prefeitura';
+
+// Função principal com jQuery (sem conflitos com outros frameworks)
+var $jq = jQuery.noConflict();
+$jq(document).ready(function() {
+
+    // Função para limpar os campos do formulário quando o CEP é inválido ou não encontrado.
+    function limpa_formulário_cep() {
+        $jq(rua).val('');
+        $jq(bairro).val('');
+        $jq(cidade).val('');
+        $jq(uf).val('');
+    }
+
+    // Evento para formatação automática do campo de CEP enquanto o usuário digita (formato 99999-999).
+    $jq(cep).on('input', function() {
+        // Remove todos os caracteres não numéricos do valor digitado
+        var cepVal = $jq(this).val().replace(/\D/g, '');
+        
+        // Adiciona o hífen para o formato correto quando mais de 5 números foram digitados
+        if (cepVal.length > 5) {
+            cepVal = cepVal.slice(0, 5) + '-' + cepVal.slice(5, 8);
+        }
+        
+        // Atualiza o valor no campo de CEP com o formato desejado
+        $jq(this).val(cepVal);
+    });
+                
+    // Evento que dispara ao sair do campo de CEP para iniciar a validação e busca do endereço.
+    $jq(cep).blur(function() {
+        // Remove qualquer caractere não numérico do valor do CEP.
+        var cepx = $jq(this).val().replace(/\D/g, '');
+
+        // Verifica se o CEP foi preenchido.
+        if (cepx != '') {
+            // Expressão regular para validar o formato do CEP (8 dígitos numéricos).
+            var validacep = /^[0-9]{8}$/;
+
+            // Se o formato do CEP for válido, continua o processo de consulta.
+            if(validacep.test(cepx)) {
+                // Exibe "carregando" em cada campo de endereço enquanto aguarda a resposta da consulta.
+                $jq(rua).val('...carregando');
+                $jq(bairro).val('...carregando');
+                $jq(cidade).val('...carregando');
+                $jq(uf).val('...carregando');
+
+                // Realiza a consulta do CEP no serviço viacep.com.br.
+                $jq.getJSON('https://viacep.com.br/ws/'+ cepx +'/json/?callback=?', function(dados) {
+                    
+                    // Se o CEP for encontrado, atualiza os campos com os dados retornados.
+                    if (!('erro' in dados)) {
+                        $jq(rua).val(dados.logradouro);
+                        $jq(bairro).val(dados.bairro);
+                        $jq(cidade).val(dados.localidade);
+                        $jq(uf).val(dados.uf);
+                    } else {
+                        // Se o CEP não for encontrado, limpa os campos e exibe uma mensagem de alerta.
+                        limpa_formulário_cep();
+                        alert('CEP não encontrado.');
+                    }
+                });
+            } else {
+                // Caso o formato do CEP seja inválido, limpa os campos e exibe uma mensagem de alerta.
+                limpa_formulário_cep();
+                alert('Formato de CEP inválido.');
+            }
+        } else {
+            // Se o campo de CEP estiver vazio, limpa o formulário.
+            limpa_formulário_cep();
+        }
+    });
+});
+</script>
